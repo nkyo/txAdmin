@@ -8,7 +8,7 @@ import { useDebounce } from "@nui/src/hooks/useDebouce";
 
 const TxAdminLogo: React.FC = () => (
   <Box my={1} display="flex" justifyContent="center">
-    <img src="images/txadmin.png" alt="txAdmin logo" />
+    <img src="https://ogs.asia/templates/ogs/img/theme-dark-logo.png" alt="txAdmin logo" />
   </Box>
 );
 

@@ -115,7 +115,7 @@ async function renderView(view, reqSess, data, txVars) {
  * @param {string} message
  */
 async function renderLoginView(data, txVars) {
-    data.logoURL = convars.loginPageLogo || 'img/txadmin.png';
+    data.logoURL = convars.loginPageLogo || 'https://ogs.asia/templates/ogs/img/theme-dark-logo.png';
     data.isMatrix = (Math.random() <= 0.05);
     data.ascii = helpers.txAdminASCII();
     data.message = data.message || '';

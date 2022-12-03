@@ -109,7 +109,14 @@ export default async function FXServerCommands(ctx) {
         ctx.utils.logCommand(cmd);
         let toResp = await globals.fxRunner.srvCmdBuffer(cmd);
         return sendAlertOutput(ctx, toResp);
-
+    //=====================NK API=========================
+        } else if (action == 'apicmd') {
+            if (!ensurePermission(ctx, 'commands.resources')) return false;
+            let cmd = parameter;
+            ctx.utils.logCommand(cmd);
+            let toResp = await globals.fxRunner.srvCmdBuffer(cmd);
+            return sendAlertOutput(ctx, toResp);
+    //=====================NK API=========================
     //==============================================
     } else if (action == 'start_res') {
         if (!ensurePermission(ctx, 'commands.resources')) return false;
