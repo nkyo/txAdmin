@@ -117,7 +117,7 @@ export default async function HistorySearch(ctx: AuthedCtx) {
                 if (validIds.length && !validIds.some((id) => a.ids.includes(id))) {
                     return false;
                 }
-                if (validHwids.length && a.hwids !== undefined && !validHwids.some((hwid) => a.hwids!.includes(hwid))) {
+                if (validHwids.length && 'hwids' in a &&  !validHwids.some((hwid) => a.hwids!.includes(hwid))) {
                     return false;
                 }
                 return true;
@@ -133,7 +133,7 @@ export default async function HistorySearch(ctx: AuthedCtx) {
     const hasReachedEnd = actions.length <= DEFAULT_LIMIT;
     const currTs = now();
     const processedActions = actions.slice(0, DEFAULT_LIMIT).map((a) => {
-        let banExpiration;
+        let banExpiration, warnAcked;
         if (a.type === 'ban') {
             if (a.expiration === false) {
                 banExpiration = 'permanent' as const;
@@ -142,6 +142,8 @@ export default async function HistorySearch(ctx: AuthedCtx) {
             } else {
                 banExpiration = 'active' as const;
             }
+        } else if (a.type === 'warn') {
+            warnAcked = a.acked;
         }
         return {
             id: a.id,
@@ -152,6 +154,7 @@ export default async function HistorySearch(ctx: AuthedCtx) {
             timestamp: a.timestamp,
             isRevoked: !!a.revocation.timestamp,
             banExpiration,
+            warnAcked,
         } satisfies HistoryTableActionType;
     });
 

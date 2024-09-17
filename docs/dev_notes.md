@@ -31,9 +31,11 @@
     - [x] apply `cleanPlayerName` to the ingame menu playerlist
     - [x] improved in game player search
     - related: https://github.com/tabarra/txAdmin/pull/968
-- [ ] Offline warning
+- [x] Offline warning
     - show when rejoin and IS_PED_WALKING, requires showing when it happened to the player (Issue #522)
     - Thought: offline warns need a prop to mark if they have been checked, instead of bool, could be an int for "viewed" and also count up for every join blocked on banned players
+    - [x] fix the `nui_warning.instruction` replacer
+    - [x] test warn on redm
 - [ ] New player drops page
     - [x] remove old player crashes page
     - [x] replace core webroute
@@ -99,6 +101,8 @@
 - [x] separate "announcements" and "dm" permissions
 - [x] add "this player is banned until: xxx" to the player modal
 - [x] enable nui strict mode
+- [ ] migration to change "revocation" to optional
+    - [ ] test the `getRegisteredActions()` filter as object, doing `{revocation: undefined}`
 - [ ] track channel of last console output, and if it's different prefix a `\n`
 - [ ] add more menu keybinds
     - check if the RegisterCommand is colocated
@@ -113,10 +117,16 @@
 - [x] check if the client print issues have been solved
     - https://github.com/citizenfx/fivem/commit/cafd87148a9a47eb267c24c00ec15f96103d4257
     - https://github.com/citizenfx/fivem/commit/84f724ed04d07e0b3a765601ad19ce54412f135b
+- [x] the WarningBar scrolls up with the pages when they have scroll
+- [ ] fix the message `Since this is not a critical file, ...` on first boot without txData
+    - from `SvRuntimeStatsManager` and `PlayerDropStatsManager`
+- [ ] implement `.env`
+    - Use with chokidar on `main-builder.js` to restart the build
+    - Maybe pass it through so I could use it for the server as well
+    - Don't forgor to update `development.md`
 - [ ] fix txDiagnostics (and add tx v8 heap data to it)
 - [ ] update packages
 - [ ] update wouter and add search/filters state to URL of the players/history pages 
-- [ ] Use `dotenv` or something to configure `main-builder.js` and update `development.md`
 - [ ] add `.yarn.installed` to the dist? even in dev
 - [ ] check if chat PRs were merged, and start migrating recipes to use `resources_useSystemChat`
 - [ ] check netid uint16 overflow
@@ -129,7 +139,23 @@
 
 
 
+## live console timestamp:
+- na virada do dia, adicionar um marker ---data---
+- whenever data arrives, push `[chan: string, data:string, pendingStart?: number]` to an array and start a ~250ms debounce
+- on debounce timer
+    - assemble all (incl. pending from previous)
+    - if last packet doesn't end in `\n`, do `packet.pendingStart = now`
+    - if any stderr, group them at the end, if any packet delayed to next debounce, also hold the stderr group
+    - flush the data to ws in a way that it gets flushed immediately
+    - start a 1500ms timer to flush any pending (do not append `\n` at the end)
+    - only add the ts marker to the start of the block, skip one `\n` if the last line didn't end with `\n`
 
+## live console persistent clear:
+- either use the timestamps from above, or
+- create butex to the FXServerLogger, so client knows when it's reset
+- when sending initial data, send also the number of bytes that have been wiped
+- upon "clear", panel saves to session storage the mutex, the bytes from item above + bytes received
+- use the data above to wipe data udner the offset when joining the session
 
 
 # Easy way of doing on/off duty scripts:
@@ -185,7 +211,6 @@ for log in statsLog:
     - [ ] add average session time tracking to statsManager.playerDrop
 
 - Small feats, fix, and improvements:
-    - [ ] the WarningBar scrolls up with the pages when they have scroll
     - [ ] locale file optimization - build 8201 and above
     - [ ] easter egg???
         - some old music? https://www.youtube.com/watch?v=nNoaXej0Jeg
