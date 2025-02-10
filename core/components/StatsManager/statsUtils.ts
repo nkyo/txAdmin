@@ -3,20 +3,6 @@ import CircularBuffer from 'mnemonist/circular-buffer';
 import * as d3array from 'd3-array';
 
 
-//Output types
-export type MultipleCounterOutput = Record<string, number>;
-export type QuantileArrayOutput = {
-    count: number;
-    q5: number;
-    q25: number;
-    q50: number;
-    q75: number;
-    q95: number;
-} | {
-    notEnoughData: true;
-}; //if less than min size
-
-
 /**
  * Helper class to count different options
  */
@@ -73,7 +59,7 @@ export class MultipleCounter extends Map<string, number> {
         let iterable;
         if (newData instanceof MultipleCounter || Array.isArray(newData)) {
             iterable = newData;
-        } else if (typeof newData === 'object' && newData !== null){
+        } else if (typeof newData === 'object' && newData !== null) {
             iterable = Object.entries(newData);
         } else {
             throw new Error(`Invalid data type for merge`);
@@ -120,6 +106,7 @@ export class MultipleCounter extends Map<string, number> {
         return this.toSortedKeyObject();
     }
 }
+export type MultipleCounterOutput = Record<string, number>;
 
 
 /**
@@ -159,21 +146,42 @@ export class QuantileArray {
      * Processes the cache and returns the count and quantiles, if enough data.
      */
     result(): QuantileArrayOutput {
-        const cacheSize = this.#cache.size
-        if (cacheSize < this.#minSize) {
+        if (this.#cache.size < this.#minSize) {
             return {
-                notEnoughData: true,
+                enoughData: false,
             }
         } else {
             return {
-                count: cacheSize,
-                q5: d3array.quantile(this.#cache.values(), 0.05) as number,
-                q25: d3array.quantile(this.#cache.values(), 0.25) as number,
-                q50: d3array.quantile(this.#cache.values(), 0.50) as number,
-                q75: d3array.quantile(this.#cache.values(), 0.75) as number,
-                q95: d3array.quantile(this.#cache.values(), 0.95) as number,
+                enoughData: true,
+                count: this.#cache.size,
+                p5: d3array.quantile(this.#cache.values(), 0.05)!,
+                p25: d3array.quantile(this.#cache.values(), 0.25)!,
+                p50: d3array.quantile(this.#cache.values(), 0.50)!,
+                p75: d3array.quantile(this.#cache.values(), 0.75)!,
+                p95: d3array.quantile(this.#cache.values(), 0.95)!,
             };
         }
+    }
+
+    /**
+     * Returns a human readable summary of the data.
+     */
+    resultSummary(unit = ''): QuantileArraySummary {
+        const result = this.result();
+        if (!result.enoughData) {
+            return {
+                ...result,
+                summary: 'not enough data available',
+            };
+        }
+        // const a = Object.entries(result)
+        const percentiles = (Object.entries(result) as [string, number][])
+            .filter((el): el is [string, number] => el[0].startsWith('p'))
+            .map(([key, val]) => `${key}:${Math.ceil(val)}${unit}`);
+        return {
+            ...result,
+            summary: `(${this.#cache.size}) ` + percentiles.join('/'),
+        };
     }
 
     toJSON() {
@@ -184,6 +192,21 @@ export class QuantileArray {
         return this.result();
     }
 }
+type QuantileArrayOutput = {
+    enoughData: true;
+    count: number;
+    p5: number;
+    p25: number;
+    p50: number;
+    p75: number;
+    p95: number;
+} | {
+    enoughData: false;
+}; //if less than min size
+
+type QuantileArraySummary = QuantileArrayOutput & {
+    summary: string,
+};
 
 
 /**
@@ -221,4 +244,60 @@ export class TimeCounter {
     [inspect.custom]() {
         return this.toJSON();
     }
+}
+
+
+/**
+ * Estimates the JSON size in bytes of an array based on a simple heuristic
+ */
+export const estimateArrayJsonSize = (srcArray: any[], minLength: number): JsonEstimateResult => {
+    // Check if the buffer has enough data
+    if (srcArray.length <= minLength) {
+        return { enoughData: false };
+    }
+    
+    // Determine a reasonable sample size:
+    // - At least 100 elements
+    // - Up to 10% of the buffer length
+    // - Capped at 1000 elements to limit CPU usage
+    const sourceArrayLength = srcArray.length;
+    const sampleSize = Math.min(1000, Math.max(100, Math.floor(sourceArrayLength * 0.1)));
+    const sampleArray: any[] = [];
+
+    // Randomly sample elements from the buffer
+    for (let i = 0; i < sampleSize; i++) {
+        const randomIndex = Math.floor(Math.random() * sourceArrayLength);
+        sampleArray.push(srcArray[randomIndex]);
+    }
+
+    // Serialize the sample to JSON
+    const jsonString = JSON.stringify(sampleArray);
+    const sampleSizeBytes = Buffer.byteLength(jsonString, 'utf-8'); // More accurate byte count
+
+    // Estimate the total size based on the sample
+    const estimatedTotalBytes = (sampleSizeBytes / sampleSize) * sourceArrayLength;
+    const bytesPerElement = estimatedTotalBytes / sourceArrayLength;
+
+    return {
+        enoughData: true,
+        bytesTotal: Math.round(estimatedTotalBytes),
+        bytesPerElement: Math.ceil(bytesPerElement),
+    };
+};
+
+type JsonEstimateResult = {
+    enoughData: false;
+} | {
+    enoughData: true;
+    bytesTotal: number;
+    bytesPerElement: number;
+};
+
+
+/**
+ * Checks if a value is within a fraction margin of an expected value.
+ */
+export const isWithinMargin = (value: number, expectedValue: number, marginFraction: number) => {
+    const margin = expectedValue * marginFraction;
+    return Math.abs(value - expectedValue) <= margin;
 }

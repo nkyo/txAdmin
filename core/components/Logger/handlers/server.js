@@ -1,7 +1,10 @@
 /* eslint-disable padded-blocks */
 const modulename = 'Logger:Server';
-import { LoggerBase, separator } from '../loggerUtils.js';
+import { QuantileArray, estimateArrayJsonSize } from '@core/components/StatsManager/statsUtils';
+import { LoggerBase } from '../LoggerBase';
+import { getBootDivider } from '../loggerUtils';
 import consoleFactory from '@extras/console';
+import bytes from 'bytes';
 const console = consoleFactory(modulename);
 
 /*
@@ -46,7 +49,7 @@ before sending it to fd3
 
 
 export default class ServerLogger extends LoggerBase {
-    constructor(basePath, lrProfileConfig) {
+    constructor(txAdmin, basePath, lrProfileConfig) {
         const lrDefaultOptions = {
             path: basePath,
             intervalBoundary: true,
@@ -59,23 +62,38 @@ export default class ServerLogger extends LoggerBase {
 
         };
         super(basePath, 'server', lrDefaultOptions, lrProfileConfig);
-        this.lrStream.write(`\n${separator('txAdmin Starting')}\n`);
-        this.lrStream.on('rotated', (filename) => {
-            this.lrStream.write(`\n${separator('Log Rotated')}\n`);
-            console.verbose.log(`Rotated file ${filename}`);
-        });
+        this.lrStream.write(getBootDivider());
 
         this.recentBuffer = [];
         this.recentBufferMaxSize = 32e3;
+
+        //stats stuff
+        this.eventsPerMinute = new QuantileArray(24 * 60, 6 * 60); //max 1d, min 6h
+        this.eventsThisMinute = 0;
+        setInterval(() => {
+            this.eventsPerMinute.count(this.eventsThisMinute);
+            this.eventsThisMinute = 0;
+        }, 60_000);
     }
 
 
     /**
      * Returns a string with short usage stats
-     * TODO: calculate events per minute moving average 10 && peak
      */
     getUsageStats() {
-        return `Buffer: ${this.recentBuffer.length},  lrErrors: ${this.lrErrors}`;
+        // Get events/min
+        const eventsPerMinRes = this.eventsPerMinute.resultSummary();
+        const eventsPerMinStr = eventsPerMinRes.enoughData
+            ? eventsPerMinRes.summary
+            : 'LowCount';
+
+        //Buffer JSON size (8k min buffer, 1k samples)
+        const bufferJsonSizeRes = estimateArrayJsonSize(this.recentBuffer, 4e3);
+        const bufferJsonSizeStr = bufferJsonSizeRes.enoughData
+            ? `${bytes(bufferJsonSizeRes.bytesPerElement)}/e`
+            : 'LowCount';
+
+        return `Buffer: ${this.recentBuffer.length},  lrErrors: ${this.lrErrors}, mem: ${bufferJsonSizeStr}, rate: ${eventsPerMinStr}`;
     }
 
 
@@ -112,6 +130,7 @@ export default class ServerLogger extends LoggerBase {
                 }
 
                 //Add to recent buffer
+                this.eventsThisMinute++;
                 this.recentBuffer.push(eventObject);
                 if (this.recentBuffer.length > this.recentBufferMaxSize) this.recentBuffer.shift();
 
@@ -148,6 +167,7 @@ export default class ServerLogger extends LoggerBase {
         } else if (typeof eventData.src === 'number' && eventData.src > 0) {
             const player = globals.playerlistManager.getPlayerById(eventData.src);
             if (player) {
+                //FIXME: playermutex must be a ServerPlayer prop, already considering mutex, netid and rollover
                 const playerID = `${mutex}#${eventData.src}`;
                 srcObject = { id: playerID, name: player.displayName };
                 srcString = `[${playerID}] ${player.displayName}`;

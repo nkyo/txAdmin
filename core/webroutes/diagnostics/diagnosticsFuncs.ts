@@ -7,8 +7,10 @@ import pidUsageTree from '@core/extras/pidUsageTree.js';
 import { txEnv } from '@core/globalData';
 import si from 'systeminformation';
 import consoleFactory from '@extras/console';
-import { QuantileArrayOutput } from '@core/components/StatsManager/statsUtils';
 import TxAdmin from '@core/txAdmin';
+import { parseFxserverVersion } from '@extras/fxsVersionParser';
+import { getHeapStatistics } from 'node:v8';
+import bytes from 'bytes';
 const console = consoleFactory(modulename);
 
 
@@ -144,25 +146,15 @@ export const getFXServerData = async (txAdmin: TxAdmin) => {
         return { error: 'Failed to retrieve FXServer data. <br>The server must be online for this operation. <br>Check the terminal for more information (if verbosity is enabled)' };
     }
 
-    //Helper function
-    const getBuild = (ver: any) => {
-        try {
-            const res = /v1\.0\.0\.(\d{4,5})\s*/.exec(ver);
-            // @ts-ignore: let it throw
-            return parseInt(res[1]);
-        } catch (error) {
-            return 0;
-        }
-    };
-
     //Processing result
     try {
+        const ver = parseFxserverVersion(infoData.server);
         return {
             error: false,
             statusColor: 'success',
             status: ' ONLINE ',
-            version: infoData.server,
-            versionMismatch: (getBuild(infoData.server) !== txEnv.fxServerVersion),
+            version: ver.valid ? `${ver.platform}:${ver.branch}:${ver.build}` : `${ver.platform ?? 'unknown'}:INVALID`,
+            versionMismatch: (ver.build !== txEnv.fxServerVersion),
             resources: infoData.resources.length,
             onesync: (infoData.vars && infoData.vars.onesync_enabled === 'true') ? 'enabled' : 'disabled',
             maxClients: (infoData.vars && infoData.vars.sv_maxClients) ? infoData.vars.sv_maxClients : '--',
@@ -285,22 +277,11 @@ export const getTxAdminData = async (txAdmin: TxAdmin) => {
         units: ['d', 'h', 'm'],
     };
 
-    const formatQuantileTimes = (res: QuantileArrayOutput) => {
-        let output = 'not enough data available';
-        if (!('notEnoughData' in res)) {
-            const quantileTimes = [res.count.toString()];
-            for (const [key, val] of Object.entries(res)) {
-                if (key === 'count') continue;
-                quantileTimes.push(`${Math.ceil(val)}ms`);
-            }
-            output = quantileTimes.join(' / ');
-        }
-        return output;
-    }
-    const banCheckTime = formatQuantileTimes(txAdmin.statsManager.txRuntime.banCheckTime.result());
-    const whitelistCheckTime = formatQuantileTimes(txAdmin.statsManager.txRuntime.whitelistCheckTime.result());
-    const playersTableSearchTime = formatQuantileTimes(txAdmin.statsManager.txRuntime.playersTableSearchTime.result());
-    const historyTableSearchTime = formatQuantileTimes(txAdmin.statsManager.txRuntime.historyTableSearchTime.result());
+    const banCheckTime = txAdmin.statsManager.txRuntime.banCheckTime.resultSummary('ms');
+    const whitelistCheckTime = txAdmin.statsManager.txRuntime.whitelistCheckTime.resultSummary('ms');
+    const playersTableSearchTime = txAdmin.statsManager.txRuntime.playersTableSearchTime.resultSummary('ms');
+    const historyTableSearchTime = txAdmin.statsManager.txRuntime.historyTableSearchTime.resultSummary('ms');
+    const memoryUsage = getHeapStatistics();
 
     return {
         //Stats
@@ -309,6 +290,7 @@ export const getTxAdminData = async (txAdmin: TxAdmin) => {
             close: txAdmin.statsManager.txRuntime.monitorStats.restartReasons.close,
             heartBeat: txAdmin.statsManager.txRuntime.monitorStats.restartReasons.heartBeat,
             healthCheck: txAdmin.statsManager.txRuntime.monitorStats.restartReasons.healthCheck,
+            both: txAdmin.statsManager.txRuntime.monitorStats.restartReasons.both,
         },
         hbFD3Fails: txAdmin.statsManager.txRuntime.monitorStats.healthIssues.fd3,
         hbHTTPFails: txAdmin.statsManager.txRuntime.monitorStats.healthIssues.http,
@@ -328,5 +310,16 @@ export const getTxAdminData = async (txAdmin: TxAdmin) => {
         fxServerHost: (txAdmin.fxRunner.fxServerHost)
             ? txAdmin.fxRunner.fxServerHost
             : '--',
+
+        //Usage stuff
+        memoryUsage: {
+            heap_used: bytes(memoryUsage.used_heap_size),
+            heap_limit: bytes(memoryUsage.heap_size_limit),
+            heap_pct: (memoryUsage.heap_size_limit > 0)
+                ? (memoryUsage.used_heap_size / memoryUsage.heap_size_limit * 100).toFixed(2)
+                : 0,
+            physical: bytes(memoryUsage.total_physical_size),
+            peak_malloced: bytes(memoryUsage.peak_malloced_memory),
+        },
     };
 }

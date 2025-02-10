@@ -8,13 +8,14 @@ import StreamValues from 'stream-json/streamers/StreamValues';
 import { convars, txEnv } from '@core/globalData';
 import { validateFixServerConfig } from '@core/extras/fxsConfigHelper';
 import { now } from '@extras/helpers';
-import OutputHandler, { FxChildChannelType } from './outputHandler';
+import Fd3Handler from './fd3Handler';
 
 import { customAlphabet } from 'nanoid/non-secure';
-import dict51 from 'nanoid-dictionary/nolookalikes';
+import dict49 from 'nanoid-dictionary/nolookalikes';
 import consoleFactory from '@extras/console';
+import { ConsoleLineType } from '@core/components/Logger/FXServerLogger';
 const console = consoleFactory(modulename);
-const genMutex = customAlphabet(dict51, 5);
+const genMutex = customAlphabet(dict49, 5);
 
 
 //Helpers
@@ -81,7 +82,7 @@ export default class FXRunner {
         this.fxServerHost = null;
         this.currentMutex = null;
         this.cfxId = null;
-        this.outputHandler = new OutputHandler(txAdmin);
+        this.fd3Handler = new Fd3Handler(txAdmin);
     }
 
 
@@ -162,7 +163,6 @@ export default class FXRunner {
     /**
      * Spawns the FXServer and sets up all the event handlers
      * @param {boolean} announce
-     * @returns {string} null or error message
      */
     async spawnServer(announce) {
         //If the server is already alive
@@ -257,9 +257,9 @@ export default class FXRunner {
             }
             pid = this.fxChild.pid.toString();
             console.ok(`>> [${pid}] FXServer Started!`);
-            globals.logger.fxserver.writeMarker('starting');
+            globals.logger.fxserver.logFxserverBoot(pid);
             this.history.push({
-                pid: pid,
+                pid,
                 timestamps: {
                     start: now(),
                     kill: false,
@@ -311,26 +311,23 @@ export default class FXRunner {
 
         //Default channel handlers
         this.fxChild.stdout.on('data',
-            this.outputHandler.write.bind(
-                this.outputHandler,
-                FxChildChannelType.StdOut,
-                this.currentMutex,
+            globals.logger.fxserver.writeFxsOutput.bind(
+                globals.logger.fxserver,
+                ConsoleLineType.StdOut,
             ),
         );
         this.fxChild.stderr.on('data',
-            this.outputHandler.write.bind(
-                this.outputHandler,
-                FxChildChannelType.StdErr,
-                this.currentMutex,
+            globals.logger.fxserver.writeFxsOutput.bind(
+                globals.logger.fxserver,
+                ConsoleLineType.StdErr,
             ),
         );
 
         //JsonIn channel handler
         const jsoninPipe = this.fxChild.stdio[3].pipe(StreamValues.withParser());
         jsoninPipe.on('data',
-            this.outputHandler.write.bind(
-                this.outputHandler,
-                FxChildChannelType.JsonIn,
+            this.fd3Handler.write.bind(
+                this.fd3Handler,
                 this.currentMutex,
             ),
         );
@@ -484,12 +481,12 @@ export default class FXRunner {
 
     /**
      * Formats and sends commands to fxserver's stdin.
-     * @param {string} cmdName
-     * @param {(string|object)[]} input
-     * @param {string} src
-     * @returns {boolean} success
+     * @param {string} cmdName - The name of the command to send.
+     * @param {(string|Object)[]} [cmdArgs=[]] - The arguments for the command (optional).
+     * @param {string} [author] - The author of the command (optional).
+     * @returns {boolean} Success status of the command.
      */
-    sendCommand(cmdName, cmdArgs = [], src = 'TXADMIN') {
+    sendCommand(cmdName, cmdArgs = [], author) {
         if (this.fxChild === null) return false;
         if (typeof cmdName !== 'string' || !cmdName.length) throw new Error('cmdName is empty');
         if (!Array.isArray(cmdArgs)) throw new Error('cmdArgs is not an array');
@@ -513,7 +510,11 @@ export default class FXRunner {
         try {
             const rawInputString = rawInputParts.join(' ');
             const success = this.fxChild.stdin.write(rawInputString + '\n');
-            globals.logger.fxserver.writeMarker('command', rawInputString, src);
+            if (author) {
+                globals.logger.fxserver.logAdminCommand(author, rawInputString);
+            } else {
+                globals.logger.fxserver.logSystemCommand(rawInputString);
+            }
             return success;
         } catch (error) {
             console.verbose.error('Error sending command to fxChild.stdin');
@@ -528,13 +529,17 @@ export default class FXRunner {
      * TODO: make this method accept an array and apply the formatCommand() logic
      * @param {string} command
      */
-    srvCmd(command, src = 'TXADMIN') {
+    srvCmd(command, author) {
         if (typeof command !== 'string') throw new Error('Expected String!');
         if (this.fxChild === null) return false;
         const sanitized = command.replaceAll(/\n/g, ' ');
         try {
             const success = this.fxChild.stdin.write(sanitized + '\n');
-            globals.logger.fxserver.writeMarker('command', sanitized, src);
+            if (author) {
+                globals.logger.fxserver.logAdminCommand(author, sanitized);
+            } else {
+                globals.logger.fxserver.logSystemCommand(sanitized);
+            }
             return success;
         } catch (error) {
             console.verbose.error('Error writing to fxChild.stdin');

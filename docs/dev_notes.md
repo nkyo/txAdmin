@@ -1,12 +1,18 @@
+Legend:
+- [ ] -> Not started
+- [x] -> Completed
+- [!] -> Release Blocker
+- [?] -> Lower priority or pending investigation
+
 ## Previous bugs
-- [ ] ctrl+f doesn't work in the player modal anymore, if on the player or history pages
-    - criar um estado "any modal open" pra desabilitar todos hotkeys das páginas?
 - [x] player/history modal is cutting bottom of title (test with "jgpq", etc)
 - [x] `lipsum` suffix to all the crash reasons
 - [x] thread chart data is the cumulative sum and not the diff, so it "averages out"
 - [x] use the fxRunner PID to get the correct fxserver process - perfUtils.fetchFxsMemory
 - [x] fix the uptime detection
-- [ ] investigate player desync issues
+- [?] investigate player desync issues
+- [?] ctrl+f doesn't work in the player modal anymore, if on the player or history pages
+    - criar um estado "any modal open" pra desabilitar todos hotkeys das páginas?
 
 ## Highlights
 - [x] Anonymous admin actions (issue #893)
@@ -36,7 +42,7 @@
     - Thought: offline warns need a prop to mark if they have been checked, instead of bool, could be an int for "viewed" and also count up for every join blocked on banned players
     - [x] fix the `nui_warning.instruction` replacer
     - [x] test warn on redm
-- [ ] New player drops page
+- [x] New player drops page
     - [x] remove old player crashes page
     - [x] replace core webroute
     - [x] Page layout
@@ -55,42 +61,51 @@
     - [x] add window selection buttons to drilldown card
     - [x] when range is selected, single click should remove it
     - [x] tune in swr caching/reloading behavior
-    - [ ] improve crash sorting
+    - [x] improve crash sorting
         - change logic of backend to sort by count by default
         - then on the frontend if it's `crashesSortByReason`, then array.slice.sort(...)
         - copy the sort code from [](/core/components/StatsManager/statsUtils.ts#L87)
-    - [ ] review page layout: 
-        - [ ] make it less card-y
-        - [ ] fix crashes table widening the outer shell - is it just the scroll?
-        - [ ] fix crashes table is not responsive
-        - [ ] fix scroll popping in/out
-    - [ ] adapt code to track resource drops + adjust categories according to the new ones
-        - server shutting down should not be counted
-        - check dashboard player drops chart brightness and "By Resources" overflow
-    - Optional stuff:
-        - [ ] add drilldown interval buttons
+    - [x] adapt code to track resource drops + adjust categories according to the new ones
+        - [x] server shutting down should not be counted
+        - [x] add migration for `user-initiated`, `server-initiated` and `resources[]`
+        - [x] check dashboard player drops chart brightness and "By Resources" overflow
+        - [x] fix border color calculation on playerDropCategories.ts
+        - [x] add resources stats to player drops page
+    - [?] review page layout: 
+        - [?] make it less card-y
+        - [?] fix crashes table widening the outer shell - is it just the scroll?
+        - [?] fix crashes table is not responsive
+        - [?] fix scroll popping in/out
+    - [?] add drilldown interval buttons
 - Dashboard stuff:
-    - [ ] add testing for getServerStatsData
-    - [ ] fix getMinTickIntervalMarker behavior when 0.2
-    - [ ] warning for top servers
-    - StatsManager.svRuntime:
-        - [ ] write log optimizer and remove the webroute 30h filter
-    - thread perf chart:
-        - [ ] color should change correctly at the min interval marker point
-        - [ ] change the bg color to the color of the average ticket with heavy transparency?
+    - [?] add testing for getServerStatsData
+    - [?] warning for top servers
     - full perf chart:
         - [x] increase the size of the cursor Y value indicator? maybe move to where the mouse is instead of x=0
         - [x] increase `h-[26rem]` back to 28 after removing the new chart warning
-        - [ ] buttons to show memory usage, maybe hide player count
-        - [ ] calculate initial zoom of 30h, maybe some linear interpolation
-        - [ ] use semi-transparent arrows on the sides to indicate there is more to pan to
-        - [ ] don't clear svg on render, use d3 joins
-        - [ ] swr disable revalidateOnFocus and use interval
+        - [x] swr disable revalidateOnFocus and use interval
             - or some kind of push from the dashboard room event
+        - [?] buttons to show memory usage, maybe hide player count
+        - [?] calculate initial zoom of 30h
+            - Initial zoom code: https://observablehq.com/@d3/zoomable-area-chart?intent=fork
+        - [?] use semi-transparent arrows on the sides to indicate there is more to pan to when hovering
+        - [?] show server close reason
+        - [?] don't clear svg on render, use d3 joins
+    - StatsManager.svRuntime:
+        - [?] write log optimizer and remove the webroute 30h filter
+            - [ref](/core/components/StatsManager/svRuntime/config.ts#L33)
+            - maybe use rounded/aligned times?
+            - check how this code works `d3.timeHours(new Date(1715741829000), new Date())[0]`
+    - thread perf chart:
+        - [?] add the good/bad markers?
+        - [?] fix getMinTickIntervalMarker behavior when 0.2
+            - maybe just check if it's the hardcoded or color everything blue
+            - [ref](/core/components/WebServer/wsRooms/dashboard.ts#L26)
+        - [?] color should change correctly at the min interval marker point
+        - [?] change the bg color to the color of the average ticket with heavy transparency?
 
 ## Small feat
 - [x] make server v8 heap reports faster to large changes
-- [x] logout now brings to the login page with post-login redirect
 - [x] messages to improve:
     - [x] kick
         - [edit](/core/webroutes/player/actions.ts#L342)
@@ -100,212 +115,87 @@
         - change to `admin request`
 - [x] separate "announcements" and "dm" permissions
 - [x] add "this player is banned until: xxx" to the player modal
-- [x] enable nui strict mode
-- [ ] migration to change "revocation" to optional
-    - [ ] test the `getRegisteredActions()` filter as object, doing `{revocation: undefined}`
-- [ ] track channel of last console output, and if it's different prefix a `\n`
-- [ ] add more menu keybinds
+- [x] add timestamp to live console
+    - [x] track channel of last console output, and if it's different prefix a `\n`
+    - [x] modify the live console code
+- [x] feat(menu): added keybinds for almost all main page actions
     - check if the RegisterCommand is colocated
     - need to add and test `if not menuIsAccessible then return end` to all keybinds
 
+## Fixes
+- [x] logout now brings to the login page with post-login redirect
+- [x] fix new dashboard not redirecting to set up
+- [x] the WarningBar scrolls up with the pages when they have scroll
+- [x] fix the message `Since this is not a critical file, ...` on first boot without txData
+    - from `SvRuntimeStatsManager` and `PlayerDropStatsManager` + persistent cache
+- [x] fix: doing /tx <disconnected id> shows empty modal
+- [x] fix the spam of `[tx:WebServer:AuthMws] Invalid session auth: admin_not_found`
+- [x] fix: `server partial hang detected` should not be the error for `(HB:0HC:--)`
+- [x] fix txDiagnostics (and add tx v8 heap data to it)
+
 ## Chores + refactor + boring stuff
 - [x] remove /legacy/dashboard route + handler
-- [x] fix new dashboard not redirecting to set up
 - [x] remove more pending DynamicNewBadge/DynamicNewItem (settings page as well)
     - and add new ones to the player drops and settings
 - [x] improve the procps/wmic error messages
 - [x] check if the client print issues have been solved
     - https://github.com/citizenfx/fivem/commit/cafd87148a9a47eb267c24c00ec15f96103d4257
     - https://github.com/citizenfx/fivem/commit/84f724ed04d07e0b3a765601ad19ce54412f135b
-- [x] the WarningBar scrolls up with the pages when they have scroll
-- [ ] fix the message `Since this is not a critical file, ...` on first boot without txData
-    - from `SvRuntimeStatsManager` and `PlayerDropStatsManager`
-- [ ] implement `.env`
-    - Use with chokidar on `main-builder.js` to restart the build
-    - Maybe pass it through so I could use it for the server as well
-    - Don't forgor to update `development.md`
-- [ ] fix txDiagnostics (and add tx v8 heap data to it)
-- [ ] update packages
-- [ ] update wouter and add search/filters state to URL of the players/history pages 
-- [ ] add `.yarn.installed` to the dist? even in dev
-- [ ] check if chat PRs were merged, and start migrating recipes to use `resources_useSystemChat`
-- [ ] check netid uint16 overflow
+- [x] check if chat PRs were merged, and start migrating recipes to use `resources_useSystemChat`
+- [x] merge easy PRs
+- [x] check the noLookAlikesAlphabet vs nanoid-dictionary/nolookalikes situation
+    - the nanoid version is 49 chars long, and yet it's referenced as dict51
+- [x] healthmonitor: write to logger.fxserver the internal reason as marker
+- [x] check compatibility with `sv_enableNetEventReassembly false`
+- [x] update packages
+- [x] update wouter and add search/filters state to URL of the players/history pages
+- [x] drop category tooltips on drops page
+- [x] feat(panel): add player/action modal ref to url search param
+- [x] buffer fxserver lrstream for 5 seconds before stripping colors
+- [x] fix(core): a `EMFILE: too many open files` error on windows will cause the `admins.json` to reset
+    - [ref](/core/components/AdminVault/index.js#L289)
+- [x] check cicd stuff on testing repo before release
+- [x] feat(core): added new permission for server log
+- [x] fix(menu): fixed-ish ragdolling and damage when leaving noclip
+- [x] fix(menu): improved fps drop when using noclip and added sound
+- [?] add `.yarn.installed` to the dist? even in dev
+- [?] check netid uint16 overflow
+    - right now the `mutex#netid` is being calculated on [logger](/core/components/Logger/handlers/server.js#L148)
     - detect netid rollover and set some flag to add some identifiable prefix to the mutex?
     - increase mutex to 6 digits?
     - `/^(?<mutex>\w{5})#(?<netid>\d{1,6})(?:r(?<rollover>\d{1,3}))?$/`
     - write parser, which will return the groups, defaulting rollover to 0
-- [ ] check the noLookAlikesAlphabet vs nanoid-dictionary/nolookalikes situation
-    - the nanoid version is 49 chars long, and yet it's referenced as dict51
+- [?] check if it makes sense to allow the txAdmin thread to run more than every 50ms
+    - node 22 branch -> code/components/citizen-server-monitor/src/MonitorInstance.cpp:307
+- [?] implement `.env`
+    - https://www.npmjs.com/package/dotenv-expand
+    - https://cs.github.com/?scopeName=All+repos&scope=&q=repo%3Avercel%2Fnext.js+%40next%2Fenv
+    - https://github.com/vercel/next.js/blob/canary/packages/next-env/index.ts
+    - Use with chokidar on `main-builder.js` to restart the build
+    - Pass it through so I could use it for the server as well
+    - Don't forget to update `development.md`
+    - node 22 `process.loadEnvFile(path)`?
+- [?] check tx on node 22
+- [?] see if it's a good idea to replace `getHostStats.js` with si.osInfo()
+    - same for getting process load, instead of fixing the wmic issue
 
 
-
-## live console timestamp:
-- na virada do dia, adicionar um marker ---data---
-- whenever data arrives, push `[chan: string, data:string, pendingStart?: number]` to an array and start a ~250ms debounce
-- on debounce timer
-    - assemble all (incl. pending from previous)
-    - if last packet doesn't end in `\n`, do `packet.pendingStart = now`
-    - if any stderr, group them at the end, if any packet delayed to next debounce, also hold the stderr group
-    - flush the data to ws in a way that it gets flushed immediately
-    - start a 1500ms timer to flush any pending (do not append `\n` at the end)
-    - only add the ts marker to the start of the block, skip one `\n` if the last line didn't end with `\n`
+## Tentative Database Changes
+- [ ] migration to change "revocation" to optional
+    - [ ] test the `getRegisteredActions()` filter as object, doing `{revocation: undefined}`
+- [ ] add player name history
+- [ ] add player session time tracking
+    - [ref](/core/playerLogic/playerClasses.ts#L281)
+    - [ ] create simple page to list top 100 players by playtime in the last 30d, 14d, 7d, yesterday, today
+    - if storing in a linear UInt16Array, 100k players * 120d * 4bytes per date = 48mb
 
 ## live console persistent clear:
 - either use the timestamps from above, or
-- create butex to the FXServerLogger, so client knows when it's reset
+- create mutex to the FXServerLogger, so client knows when it's reset
 - when sending initial data, send also the number of bytes that have been wiped
 - upon "clear", panel saves to session storage the mutex, the bytes from item above + bytes received
 - use the data above to wipe data udner the offset when joining the session
 
-
-# Easy way of doing on/off duty scripts:
-- the current ones out there exist by abusing the auth event:
-    - `TriggerEvent("txcl:setAdmin", false, false, "you are offduty")`
-- provide an export to register a resource as a onduty validator
-- when an auth sets place, reach out to the registered export to validate if someone should get the admin perms or not
-    - if not, return an error message displaying a `[resource] <custom message>` as the fail reason
-- provide an export to trigger the admin auth of any player
-- provide an export to trigger a setAdmin removing the perms
-
-
-
-==================================================
-
-TODO: chart of new players per day
-
-
-
-d3.timeHours(new Date(1715741829000), new Date())[0]
-
-
-# svNetwork (should be 100fps)
-29037t / 300s = 96.79fps
-300s / 29037t = 10.33ms
-
-# svSync (should be 120fps)
-35893t / 300s = 119.64fps
-300s / 35893t = 8.36ms
-
-# svMain (should be 20fps)
-5965t / 300s = 19.88fps
-300s / 5965t = 50.29ms
-
-
-
-let toCombine = [];
-for log in statsLog:
-     - log.ts - toCombine[0].ts < resolution
-          - toCombine.push(log)
-     - else:
-          - combined = combine(toCombine)
-          - splice a array
-
-
-## Next up... ish
-- Kick as punishment might be needed since minimum ban is 1 hour, possible solutions:
-    - Allow for ban minutes
-    - Add a "timeout" button that brings a prompt with 1/5/15/30 mins buttons
-    - Add a checkbox to the kick modal to mark it as a punishment
-
-- Highlights:
-    - [ ] add average session time tracking to statsManager.playerDrop
-
-- Small feats, fix, and improvements:
-    - [ ] locale file optimization - build 8201 and above
-    - [ ] easter egg???
-        - some old music? https://www.youtube.com/watch?v=nNoaXej0Jeg
-        - Having the menu protest when someone fixes their car too much in a short time span?
-        - Zeus or crazy thunder effects when someone spams no clip?
-        - Increasingly exciting 'tada' sounds when someone bans multiple people in a short time span? (ban 1: Ooh.. / ban 2: OOooh.. / ban 3: OOOOOHHH!)
-
-- Chores + Refactor stuff:
-    - [ ] remove more pending DynamicNewBadge/DynamicNewItem (settings page as well)
-    - [ ] reevaluate globals?.tmpSetHbDataTracking
-    - [ ] fix socket.io multiple connections - start a single instance when page opens, commands to switch rooms
-    - [ ] evaluate and maybe add event bus
-    - [ ] switch tx to lua54
-    - [ ] disable some actions while in NUI?
-
-- Boring stuff:
-    - [ ] fix the eslint config + tailwind sort
-    - [ ] build: generate fxmanifest files list dynamically
-    - [ ] fix remaining imgur links
-    - [ ] update docs on development?
-    - [ ] rename to de-capitalize components files that have multiple exports 
-    - [ ] instead of showing cfg errors when trying to start server, just show "there are errors in your cfg file" and link the user to the cfg editor page
-    - [ ] break down the discord /info command in /info and /admininfo?
-
-
-## Quick notes:
-player name history? (not searchable)
-
-
-new apis? useBackendQuery & useBackendMutation
-based on swr's methods
-the auth part can be the same middleware for both
-need to check swr's behavior on unmount and how to change timeouts
-
-
-=======================================================================
-
-
-# React Migration Roadmap
-- [ ] Setup
-- [ ] Deployer
-
-- [x] Players
-- [x] History
-- [ ] Whitelist
-- [ ] Admins
-- [ ] Settings
-- [ ] Master Actions
-- [ ] Diagnostics (TODO:)
-- [x] System Logs (TODO:)
-
-- [x] Dashboard
-- [x] Live Console
-- [ ] Resources
-    - by default show just the "newly added" resources?
-- [ ] Server Log
-- [ ] CFG Editor
-- [ ] Advanced (TODO:)
-
-
-
-### Action Modal:
-- feat requests:
-    - be able to delete bans/warns with new permission (Issue #910)
-    - top server asked for the option to edit ban duration (expire now / change)
-    - Thought: need to add an edit log like the one we have for player notes
-    - Thought: maybe we could use some dedicated icons for Expired, Edited, Revoked
-
-
-#### Whitelist:
-- remove the wl pending join table
-- add a "latest whitelists" showing both pending and members (query players + pending and join tables)
-- don't forget to keep the "add approval" button
-- bulk actions button
-    - bulk revoke whitelist
-
-
-=======================================================================
-
-# TODO: v7.3+
-- [ ] NEW PAGE: Whitelist
-- [ ] `2xl:mx-8` for all pages? (change on MainShell)
-- [ ] console nav button to jump to server start or errors? 
-    - Or maybe filter just error lines (with margin)
-    - Or maybe even detect all channels and allow you to filter them, show dropdown sorted by frequency
-- [ ] cfg parser: resource relative read errors shouldn't trigger warnings
-- [ ] check again for the need of lazy loading
-- [ ] put in server name in the login page, to help lost admins notice they are in the wrong txAdmin
-- [ ] update stuff that requires WMIC to use PS command directly 
-    - issue: https://github.com/tabarra/txAdmin/issues/970#issuecomment-2308462733
-    - new lib, same dev: https://www.npmjs.com/package/pidusage-gwmi
-    - https://learn.microsoft.com/en-us/powershell/scripting/learn/ps101/07-working-with-wmi?view=powershell-7.2
-
-
-=======================================================================
 
 This worked, no time to check which. 
 Note it's in the core root and not in the `types` folder, also it has an `export` before the declaration.
@@ -337,6 +227,312 @@ class ErrorOnAccess {
     }
 }
 ```
+
+TxGlobal.xxxx
+txGlobal.xxx
+TxGlobal.xxx
+TX.xxx
+TxModules.xxx
+
+- create a TxModuleBase class for all modules to inherit from
+- Constructor: dependencies? ConfigKeys
+- preciso registrar de alguma forma quais keys triggam um "configUpdated(configs: {}, keysChanged: string[])" 
+
+> try https://marketplace.visualstudio.com/items?itemName=ambooth.git-rename
+
+Refactor:
+- core/components -> core/modules
+    - `git mv -k -n core/components/* core/modules/`
+- core/webroutes -> core/routes
+    - `git mv -k -n core/webroutes/* core/routes/`
+- core/types/global.d.ts -> core/global.d.ts
+    - `git mv -k -n core/types/global.d.ts core/global.d.ts`
+- UpdateChecker -> CfxUpdateChecker
+    - `git mv -k -n core/modules/UpdateChecker.ts core/modules/CfxUpdateChecker.ts`
+    - F2 rename class
+    - change all references
+- remove core/playerLogic & core/extra
+- core/utils:
+    - fxsVersionParser.ts
+    - getOsDistro.js
+    - got.js
+    - helpers.ts (split)
+    - isIpAddressLocal.ts
+    - MemCache.ts
+    - pidUsageTree.js
+    - testEnv.ts
+    - xss.js
+- core/logic
+    - banner.js
+    - checkPreRelease.ts
+    - console.ts
+    - deployer.js
+    - fxsConfigHelper.ts
+    - playerClasses.ts
+    - playerFinder.ts
+    - playerResolver.ts
+    - recipeEngine.js
+    - serverDataScanner.ts
+    - setupProfile.js
+- webroutes/diagnostics/diagnosticsFuncs -> core/utils/diagnostics.ts
+- panel/src/lib/utils.ts - split all time humanization into a separate file
+
+
+class AuthedAdmin extends StoredAdmin
+
+adminvault:
+- migrar admins.json
+- pra cada admin do admins.json
+- const admin = new StoredAdmin(rawObj)
+
+no middleware:
+storedAdmin.getAuthed(csrfToken): AuthedAdmin
+
+StoredAdmin com métodos pra editar o admin
+
+
+
+type RefreshConfigFunc = (newConfig: any, keysUpdated: string[]) => void
+
+class ConfigVault /*does not extend TxModuleBase*/ {
+    private readonly moduleRefreshCallbacks: {
+        keys: string[],
+        callback: RefreshConfigFunc
+    }[] = [
+        //NOTE: aqui os módulos _deveriam_ estar na ordem em que foram inicializados
+    ];
+    constructor() {}
+    getConfigSaved(key: string) {
+        //TODO: get the value that is saved in the config file
+    }
+    getConfigValue(key: string) {
+        //TODO: get the value that is saved, or default if not saved
+    }
+    setBulkValue(changes: {[key: string]: any}) {
+        //TODO: set multiple values in the config file
+        this.processCallbacks(Object.keys(changes));
+    }
+    setConfigValue(key: string, value: any) {
+        //TODO: set the value in the config file
+        this.processCallbacks([key]);
+    }
+    processCallbacks(updatedKeys: string[]) {
+        for (const txModule of this.moduleRefreshCallbacks) {
+            //TODO: check if keys match, allow wildcards
+            const updatedMatchedKeys = updatedKeys.filter(k => txModule.keys.includes(k));
+            txModule.callback({}, updatedMatchedKeys);
+        }
+    }
+    registerUpdateCallback(keys: string[], callback: RefreshConfigFunc) {
+        this.moduleRefreshCallbacks.push({ keys, callback });
+    }
+}
+const configVault = new ConfigVault();
+
+class TxModuleBase {
+    constructor(configKeys: any) {
+        console.log('TxModuleBase constructor:', configKeys);
+        configVault.registerUpdateCallback(['whatever'], this.refreshConfig.bind(this));
+    }
+    refreshConfig(newConfig: any, keysUpdated: string[]) {
+        throw new Error(`refreshConfig not implemented`);
+    }
+}
+
+class WebServer extends TxModuleBase {
+    static readonly dependencies = ['WebPipe'];
+    static readonly configKeys = [
+        'xxxxx.*',
+        'yyyyy',
+    ];
+    constructor(public runtime: any) {
+        super(WebServer.configKeys);
+        console.log('WebServer constructor:', this.constructor.name);
+    }
+    refreshConfig(newConfig: any, keysUpdated: string[]) {
+        console.ok('passed', keysUpdated, this.runtime);
+    }
+}
+
+new WebServer('runtimexxx');
+console.dir(configVault.moduleRefreshCallbacks);
+configVault.setConfigValue('xxxxx.y', 123);
+
+
+
+
+
+
+
+
+
+
+==================================================
+
+# svNetwork (should be 100fps)
+29037t / 300s = 96.79fps
+300s / 29037t = 10.33ms
+
+# svSync (should be 120fps)
+35893t / 300s = 119.64fps
+300s / 35893t = 8.36ms
+
+# svMain (should be 20fps)
+5965t / 300s = 19.88fps
+300s / 5965t = 50.29ms
+
+
+==================================================
+
+## Next up... ish
+- Kick as punishment might be needed since minimum ban is 1 hour, possible solutions:
+    - Allow for ban minutes
+    - Add a "timeout" button that brings a prompt with 1/5/15/30 mins buttons
+    - Add a checkbox to the kick modal to mark it as a punishment
+
+- Highlights:
+    - [ ] add average session time tracking to statsManager.playerDrop
+
+- Small feats, fix, and improvements:
+    - [ ] persistent live console clearing + scroll back in time
+    - [ ] locale file optimization - build 8201 and above
+    - [ ] easter egg???
+        - some old music? https://www.youtube.com/watch?v=nNoaXej0Jeg
+        - Having the menu protest when someone fixes their car too much in a short time span?
+        - Zeus or crazy thunder effects when someone spams no clip?
+        - Increasingly exciting 'tada' sounds when someone bans multiple people in a short time span? (ban 1: Ooh.. / ban 2: OOooh.. / ban 3: OOOOOHHH!)
+    - [ ] use `ScanResourceRoot()`
+
+- Chores + Refactor stuff:
+    - [ ] remove more pending DynamicNewBadge/DynamicNewItem (settings page as well)
+    - [ ] reevaluate globals?.tmpSetHbDataTracking
+    - [ ] fix socket.io multiple connections - start a single instance when page opens, commands to switch rooms
+    - [ ] evaluate and maybe add event bus
+    - [ ] switch tx to lua54
+
+- Boring stuff:
+    - [ ] fix the eslint config + tailwind sort
+        - [alternative](https://biomejs.dev/linter/rules/use-sorted-classes/)
+        - search the notes below for "dprint" and "prettier"
+    - [ ] build: generate fxmanifest files list dynamically
+        - node 22 use fs.glob
+    - [ ] fix remaining imgur links
+    - [ ] update docs on development?
+    - [ ] rename to de-capitalize components files that have multiple exports 
+    - [ ] instead of showing cfg errors when trying to start server, just show "there are errors in your cfg file" and link the user to the cfg editor page
+    - [ ] break down the discord /info command in /info and /admininfo?
+    - [ ] enable nui strict mode
+        - check if the menu -> tx -> iframe -> legacy iframe is not working
+        - check both canary and prod builds
+
+
+=======================================================================
+
+
+# React Migration Roadmap
+- [ ] Setup
+- [ ] Deployer
+
+- [x] Players
+- [x] History
+- [ ] Whitelist
+- [ ] Admins
+- [ ] Settings
+- [ ] Master Actions
+- [ ] Diagnostics (TODO:)
+- [x] System Logs
+
+- [x] Dashboard
+- [x] Live Console
+- [ ] Resources
+- [ ] Server Log
+- [ ] CFG Editor
+- [ ] Advanced (TODO:)
+
+
+## Next Page Changes:
+### CFG Editor:
+- multiple cfg editors
+- add backup file to txdata, with the last 100 changes, name of the admin and timestamp
+
+### Setup:
+- don't ask for server data location, list txData subfolders and let the user pick or specify
+- don't ask for cfg location, assume server.cfg and let the user change
+
+### Master Actions:
+- reset fxserver - becomes server add/remove/edit, or just an option in settings -> fxserver
+- clean database - "bulk changes" button at the players page
+- revoke whitelists - button to whitelist pages
+
+### Admin manager:
+- stats on admins
+    - total count of bans/warns
+    - counts of bans/warns in the last 7, 14, 28d
+    - revocation %
+    - bans/warns %
+
+### Resources:
+- v1:
+    - should be stateful, with websocket
+    - layout inspired in code editors
+    - left sidebar with resource folders, no resources, with buttons to start/stop/restart/etc
+    - search bar at the top, searches any folder, has filters
+    - filters by default, running, stopped
+    - main content will show the resources of the selected folder OR "recently added"
+- v2:
+    - by default show only "recently added" resources
+    - each resoruce need to have:
+        - warning for outdated, button to update
+        - warning for script errors
+        - performance stats
+        - option to add/remove from auto boot
+        - option to auto restart on change (dev mode)
+        - button to see related insights (http calls, events, etc?)
+
+### Whitelist:
+- remove the wl pending join table
+- add a "latest whitelists" showing both pending and members (query players + pending and join tables)
+- don't forget to keep the "add approval" button
+- bulk actions button
+    - bulk revoke whitelist
+
+### Action Modal:
+- feat requests:
+    - be able to delete bans/warns with new permission (Issue #910)
+    - top server asked for the option to edit ban duration (expire now / change)
+    - Thought: need to add an edit log like the one we have for player notes
+    - Thought: maybe we could use some dedicated icons for Expired, Edited, Revoked
+
+
+
+=======================================================================
+
+# TODO: v7.3+
+- [ ] NEW PAGE: Whitelist
+- [ ] `2xl:mx-8` for all pages? (change on MainShell)
+- [ ] console nav button to jump to server start or errors? 
+    - Or maybe filter just error lines (with margin)
+    - Or maybe even detect all channels and allow you to filter them, show dropdown sorted by frequency
+- [ ] cfg parser: resource relative read errors shouldn't trigger warnings
+- [ ] check again for the need of lazy loading
+- [ ] put in server name in the login page, to help lost admins notice they are in the wrong txAdmin
+- [ ] update stuff that requires WMIC to use PS command directly 
+    - NOTE: perhaps just use `systeminformation.processLoad()` instead
+    - issue: https://github.com/tabarra/txAdmin/issues/970#issuecomment-2308462733
+    - new lib, same dev: https://www.npmjs.com/package/pidusage-gwmi
+    - https://learn.microsoft.com/en-us/powershell/scripting/learn/ps101/07-working-with-wmi?view=powershell-7.2
+
+
+# Easy way of doing on/off duty scripts:
+- the current ones out there exist by abusing the auth event:
+    - `TriggerEvent("txcl:setAdmin", false, false, "you are offduty")`
+- provide an export to register a resource as a onduty validator
+- when an auth sets place, reach out to the registered export to validate if someone should get the admin perms or not
+    - if not, return an error message displaying a `[resource] <custom message>` as the fail reason
+- provide an export to trigger the admin auth of any player
+- provide an export to trigger a setAdmin removing the perms
+
+=======================================================================
 
 ```js
 import bytes from 'bytes';
@@ -410,37 +606,21 @@ z-50    shadcn: SheetOverlay
 z-50    shadcn: SheetContent
 z-50    shadcn: TooltipContent - doesnt go over the terminal?!
 
-### Next Page Changes:
-CFG Editor:
-- multiple cfg editors
-- add backup file to txdata, with the last 100 changes, name of the admin and timestamp
 
-Setup:
-- don't ask for server data location, list txData subfolders and let the user pick or specify
-- don't ask for cfg location, assume server.cfg and let the user change
-
-Master Actions:
-- reset fxserver - becomes server add/remove/edit, or just an option in settings -> fxserver
-- clean database - "bulk changes" button at the players page
-- revoke whitelists - button to whitelist pages
-
-Admin manager:
-- stats on admins
-    - total count of bans/warns
-    - counts of bans/warns in the last 7, 14, 28d
-    - revocation %
-    - bans/warns %
 
 
 =======================================================================
 
 ## Next Up
-- After Node 20:
+- After Node 22:
+    - change the gh workflows to use node 22 as well
     - check all `.npm-upgrade.json` for packages that can now be updated
     - Use `/^\p{RGI_Emoji}$/v` to detect emojis 
         - ref: https://v8.dev/features/regexp-v-flag
         - remove `unicode-emoji-json` from dependencies
         - update cleanPlayerNames
+    - it will support native bindings, so this might work:
+        - https://www.npmjs.com/package/fd-lock
 
 - [ ] Playerlist: implement basic tag system with filters, sorting and Fuse.js
     - the filter dropdown is written already, check `panel/src/layout/playerlistSidebar/Playerlist.tsx`
@@ -465,6 +645,7 @@ Admin manager:
 
 
 ### Linter notes
+- maybe biome?
 - Maybe prettier for all files except ts/js which could be in dprint
 - Use the tailwind sorter plugin
 - When running prettier, add ignore to the imported external files
@@ -573,8 +754,8 @@ if (error instanceof z.ZodError) {
 
 
 ### Server resource scanner
-ScanResourceRoot('E:/FiveM/txData/default.base/resources', (data: object) => {
-    console.dir(data);
+ScanResourceRoot('E:/FiveM/txData/default.base/resources/', (data: object) => {
+    console.dir(data, { depth: 5 });
 });
 
 
@@ -594,25 +775,6 @@ https://media.discordapp.net/attachments/1044112583201927189/1109100201366528110
 https://media.discordapp.net/attachments/885648563105837116/1079097577288499420/image.png
 https://media.discordapp.net/attachments/885648563105837116/1059850236421492736/image.png
 https://media.discordapp.net/attachments/881583434802294894/1109145714824597575/image.png
-
-=======================================================================
-> FIXME: chat doesn't build, possibly docker image issue
-docker run \
-  -p 40121:40120 \
-  -p 30121:30120 -p 30121:30120/udp \
-  --name fxstest \
-  --volume "E:\\FiveM\\dockerFxserver":/fxserver \
-  -it ubuntu bash
-
-docker exec -it fxstest bash
-apt update
-apt install -y wget xz-utils nano iputils-ping bind9-host mycli
-
-mycli -u root -h 172.17.0.2
-
-cd /fxserver
-wget https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/6427-843247aae475eb586950a706015e89033e01b3f4/fx.tar.xz
-tar xvf fx.tar.xz
 
 =======================================================================
 
@@ -769,7 +931,7 @@ FIXME: quando o menu abrir, deveria voltar os list item pro default deles
 - player count (longer window, maybe with some other data)
     - show the player count at the peaks
 - histogram of session time
-- new players per day
+- chart of new players per day
 - top players? 
 - map heatmap?!
 - player disconnect reasons

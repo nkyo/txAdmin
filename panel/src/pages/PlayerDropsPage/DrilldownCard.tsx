@@ -1,4 +1,4 @@
-import { FolderOpenIcon, ShapesIcon, SkullIcon } from "lucide-react";
+import { BoxIcon, FolderOpenIcon, ShapesIcon, SkullIcon } from "lucide-react";
 import { memo, useState } from "react";
 import type { PlayerDropsApiSuccessResp } from "@shared/otherTypes";
 import { cn, dateToLocaleDateString, dateToLocaleTimeString, isDateToday } from "@/lib/utils";
@@ -9,6 +9,7 @@ import DrilldownChangesSubcard from "./DrilldownChangesSubcard";
 import DrilldownOverviewSubcard from "./DrilldownOverviewSubcard";
 import { DisplayLodType, DrilldownRangeSelectionType } from "./PlayerDropsPage";
 import InlineCode from "@/components/InlineCode";
+import DrilldownResourcesSubcard from "./DrilldownResourcesSubcard";
 
 
 export function DrilldownCardLoading({ isError }: { isError?: boolean }) {
@@ -63,6 +64,7 @@ const DrilldownCardInner = function DrilldownCard({
     displayLod,
 }: DrilldownCardProps) {
     const [crashesTargetLimit, setCrashesTargetLimit] = useState(50);
+    const [crashesGroupReasons, setCrashesGroupReasons] = useState(false);
 
     //Window indicator
     const windowStartDate = new Date(windowStart);
@@ -98,6 +100,16 @@ const DrilldownCardInner = function DrilldownCard({
                 <div className="pb-4">
                     <div className="flex flex-col flex-shrink px-1 sm:px-4 py-2 space-y-4 border-t border-b bg-secondary/35">
                         <div className="flex items-center space-x-2">
+                            <div className='hidden xs:block'><BoxIcon className="size-4" /></div>
+                            <h2 className="font-mono text-sm">Resource Kicks</h2>
+                        </div>
+                    </div>
+                    <DrilldownResourcesSubcard resKicks={windowData.resKicks} />
+                </div>
+
+                <div className="pb-4">
+                    <div className="flex flex-col flex-shrink px-1 sm:px-4 py-2 space-y-4 border-t border-b bg-secondary/35">
+                        <div className="flex items-center space-x-2">
                             <div className='hidden xs:block'><ShapesIcon className="size-4" /></div>
                             <h2 className="font-mono text-sm">Environment Changes</h2>
                         </div>
@@ -111,30 +123,51 @@ const DrilldownCardInner = function DrilldownCard({
                             <div className='hidden xs:block'><SkullIcon className="size-4" /></div>
                             <h2 className="font-mono text-sm">Crash Reasons</h2>
                         </div>
-                        <Select
-                            value={crashesTargetLimit.toString()}
-                            onValueChange={(value) => setCrashesTargetLimit(parseInt(value))}
-                        >
-                            <SelectTrigger
-                                className="w-32 h-6 px-3 py-1 text-sm"
+                        <div className="flex gap-2">
+                            <Select
+                                value={crashesTargetLimit.toString()}
+                                onValueChange={(value) => setCrashesTargetLimit(parseInt(value))}
                             >
-                                <SelectValue placeholder="Filter by admin" />
-                            </SelectTrigger>
-                            <SelectContent className="px-0">
-                                <SelectItem value={'50'} className="cursor-pointer">
-                                    Top 50
-                                </SelectItem>
-                                <SelectItem value={'100'} className="cursor-pointer">
-                                    Top 100
-                                </SelectItem>
-                                <SelectItem value={'0'} className="cursor-pointer">
-                                    Show All
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
+                                <SelectTrigger
+                                    className="w-32 h-6 px-3 py-1 text-sm"
+                                >
+                                    <SelectValue placeholder="Filter by admin" />
+                                </SelectTrigger>
+                                <SelectContent className="px-0">
+                                    <SelectItem value={'50'} className="cursor-pointer">
+                                        Top ~50
+                                    </SelectItem>
+                                    <SelectItem value={'100'} className="cursor-pointer">
+                                        Top ~100
+                                    </SelectItem>
+                                    <SelectItem value={'0'} className="cursor-pointer">
+                                        Show All
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <Select
+                                value={crashesGroupReasons.toString()}
+                                onValueChange={(value) => setCrashesGroupReasons(value === 'true')}
+                            >
+                                <SelectTrigger
+                                    className="w-36 h-6 px-3 py-1 text-sm"
+                                >
+                                    <SelectValue placeholder="Filter by admin" />
+                                </SelectTrigger>
+                                <SelectContent className="px-0">
+                                    <SelectItem value={'false'} className="cursor-pointer">
+                                        Sort by Count
+                                    </SelectItem>
+                                    <SelectItem value={'true'} className="cursor-pointer">
+                                        Group Reasons
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                     <DrilldownCrashesSubcard
                         crashTypes={windowData.crashTypes}
+                        crashesGroupReasons={crashesGroupReasons}
                         crashesTargetLimit={crashesTargetLimit}
                         setCrashesTargetLimit={setCrashesTargetLimit}
                     />
